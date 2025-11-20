@@ -1,11 +1,11 @@
-# TEMPLATE_NAME: CONTRIBUTION GUIDELINES
+# AREA-WORKER: CONTRIBUTION GUIDELINES
 
 **Contents**: Preamble · I) Reporting a bug / error · II) Proposing new features · III) Discussions · IV) Runtime environment · V) Project development direction · VI) Contacting contributors
 
 ---
 
 ### **Preamble**
-We'd like to remind you that the **TEMPLATE_NAME** project is an open-source project whose base was developed over a weekend, so it may contain a few bugs.
+We'd like to remind you that the **AREA-WORKER** project is an open-source project whose base was developed over a weekend, so it may contain a few bugs.
 
 ---
 
@@ -39,7 +39,7 @@ Within our project, we have created a discussion (directly on GitHub). It allows
 
 You'll find different rooms, with different topics, some official like **"Announcements"**, which will concern game updates and new features, or others in which you can exchange, like **"Ideas"**, where you can submit an idea to the community, and look at the evolutions that are possible to add to it, before making an official issue.
 
-**ATTENTION**: You must still respect the **code of conduct** within project discussions, so that everyone feels at ease within **TEMPLATE_NAME**.
+**ATTENTION**: You must still respect the **code of conduct** within project discussions, so that everyone feels at ease within **AREA-WORKER**.
 
 ---
 
@@ -51,7 +51,7 @@ See the README.md file.
 
 ### **V) Project development direction**
 
-The reason we're making this project open source is, on the one hand, to create a game accessible to all, but on the other, as a means of adding more content. Indeed, we want the project to evolve by continually implementing new features for **TEMPLATE_NAME**.
+The reason we're making this project open source is, on the one hand, to create a game accessible to all, but on the other, as a means of adding more content. Indeed, we want the project to evolve by continually implementing new features for **AREA-WORKER**.
 
 So we're looking forward to the majority of contributions in this direction, at least to get our project off the ground. Thanks in advance to those who will participate.
 

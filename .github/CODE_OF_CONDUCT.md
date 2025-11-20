@@ -1,6 +1,6 @@
-TEMPLATE_NAME: CODE OF CONDUCT
+AREA-WORKER: CODE OF CONDUCT
 
-If you're reading this text, it's because you intend to play / participate / help with the TEMPLATE_NAME project, and for that, on behalf of all collaborators, THANK YOU!
+If you're reading this text, it's because you intend to play / participate / help with the AREA-WORKER project, and for that, on behalf of all collaborators, THANK YOU!
 
 Preamble
 
@@ -28,7 +28,7 @@ Has a member breached this code of conduct? Let us know immediately! Go to proje
 
 IV) Sanctions
 
-We take no pleasure in applying sanctions to our contributors, only that it may sometimes be necessary for the good of the project. Thus, the main contributors (@mbarleon-org/maintainers) can apply sanctions to our members. These sanctions may vary depending on the situation, and it's up to these main contributors to decide which sanction to apply, always with a view to preserving the project, and making it enjoyable for EVERYONE.
+We take no pleasure in applying sanctions to our contributors, only that it may sometimes be necessary for the good of the project. Thus, the main contributors (@mbarleon-org/area) can apply sanctions to our members. These sanctions may vary depending on the situation, and it's up to these main contributors to decide which sanction to apply, always with a view to preserving the project, and making it enjoyable for EVERYONE.
 
 Nevertheless, the main sanctions that can be applied are as follows:
 
@@ -44,7 +44,7 @@ Permanent ban from the project
 
 V) Main contributors
 
-The original contributors to the project (@mbarleon-org/maintainers) reserve the right:
+The original contributors to the project (@mbarleon-org/area) reserve the right:
 
 Update these terms and conditions without prior notice
 
