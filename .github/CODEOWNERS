@@ -1,0 +1,13 @@
+/.github/ @mbarleon-org/maintainers
+/LICENSE @mbarleon-org/maintainers
+/jenkins-build.sh @mbarleon-org/maintainers
+/.jenkins @mbarleon-org/maintainers
+/build.ps1 @mbarleon-org/maintainers
+/build.sh @mbarleon-org/maintainers
+/scripts/ @mbarleon-org/maintainers
+/.clang-format @mbarleon-org/maintainers
+/.editorconfig @mbarleon-org/maintainers
+/.gitattributes @mbarleon-org/maintainers
+/.gitignore @mbarleon-org/maintainers
+/.pre-commit-config.yaml @mbarleon-org/maintainers
+/.github/CODEOWNERS @mbarleon
