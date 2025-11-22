@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: area-pg
+    environment:
+      POSTGRES_PASSWORD: area
+      POSTGRES_USER: area
+      POSTGRES_DB: area
+    ports:
+      - "5432:5432"
+    networks:
+      - area-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U area -d area"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: area-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - area-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    image: area-backend:dev
+    container_name: area-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://area:area@postgres:5432/area
+      REDIS_URL: redis://redis:6379
+      RUNNER_SHARED_SECRET: ${RUNNER_SHARED_SECRET}
+      PUBLIC_URL: http://backend:3000
+      RUNNER_CALLBACK_PATH: /api/runner/callback
+      LEGACY_WORKFLOWS_DIR: /app/legacy_workflows
+      LEGACY_CREDENTIALS_DIR: /app/legacy_credentials
+      USE_RUNNERS: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./workflows:/app/legacy_workflows:ro
+      - ./credentials:/app/legacy_credentials:ro
+    networks:
+      - area-dev
+
+  runner:
+    image: area-worker:dev
+    container_name: area-runner
+    depends_on:
+      - backend
+      - redis
+    environment:
+      RUNNER_SHARED_SECRET: ${RUNNER_SHARED_SECRET}
+      RUNNER_API_URL: http://backend:3000/api
+      REDIS_URL: redis://redis:6379
+      WORKFLOW_STREAM: workflow_jobs
+      WORKFLOW_CONSUMER_GROUP: workflow-runners
+      RUNNER_EPHEMERAL_KIND: "true"
+      KIND_IMAGE: area-worker:dev
+      KIND_NAMESPACE: default
+      KUBECTL_CMD: kubectl --kubeconfig=/root/.kube/config
+      KUBECONFIG: /root/.kube/config
+    volumes:
+      - ~/.kube/config.docker:/root/.kube/config:ro
+    networks:
+      - area-dev
+      - kind
+
+networks:
+  area-dev:
+    name: area-dev
+  kind:
+    external: true
