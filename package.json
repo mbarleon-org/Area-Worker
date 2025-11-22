@@ -34,7 +34,8 @@
     "nodemailer": "^7.0.10",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
-    "typeorm": "^0.3.27"
+    "typeorm": "^0.3.27",
+    "vm2": "^3.10.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

@@ -1,11 +1,19 @@
-export { };
-const fs = require('fs');
-const path = require('path');
+import * as fs from 'fs';
+import * as path from 'path';
 
-function tryRequire(fp) {
+/**
+ * Try to require a module file. If requiring the provided path fails,
+ * attempt to swap `.ts`/`.js` extensions and require again. This is
+ * useful in development where compiled `.js` may live side-by-side with
+ * source `.ts` files.
+ *
+ * @param fp - file path to require
+ * @returns the required module's exports or throws the original error
+ */
+function tryRequire(fp: string): any {
     try {
         return require(fp);
-    } catch (e) {
+    } catch (e: any) {
         if (fp.endsWith('.ts')) {
             try { return require(fp.replace(/\.ts$/, '.js')); } catch (e2) { /* ignore */ }
         } else if (fp.endsWith('.js')) {
@@ -15,9 +23,18 @@ function tryRequire(fp) {
     }
 }
 
-function loadModules(baseDir) {
+/**
+ * Load modules from a directory on disk. Each module is expected to be a
+ * directory containing optional `infos.ts`, a `credentials/` directory and
+ * an `actions/` directory. The function will attempt to `require` those
+ * files and assemble a runtime registry object.
+ *
+ * @param baseDir - path to the modules root directory
+ * @returns an object with a `modules` mapping (moduleName -> module metadata)
+ */
+export function loadModules(baseDir: string): { modules: Record<string, any> } {
     const modulesDir = path.resolve(baseDir);
-    const modules = {};
+    const modules: Record<string, any> = {};
 
     if (!fs.existsSync(modulesDir)) return { modules };
 
@@ -25,7 +42,7 @@ function loadModules(baseDir) {
         const modulePath = path.join(modulesDir, name);
         if (!fs.statSync(modulePath).isDirectory()) continue;
 
-        const mod = { info: null, credentials: {}, actions: {} };
+        const mod: any = { info: null, credentials: {}, actions: {} };
 
         const infoFile = path.join(modulePath, 'infos.ts');
         if (fs.existsSync(infoFile)) {
@@ -42,7 +59,7 @@ function loadModules(baseDir) {
                 try {
                     const exported = tryRequire(fp) || {};
                     const exportedId = exported.id || path.basename(f, path.extname(f));
-                    let finalId;
+                    let finalId: string;
                     if (exportedId.indexOf('.') !== -1) {
                         finalId = exportedId;
                     } else {
@@ -62,7 +79,7 @@ function loadModules(baseDir) {
                 try {
                     const exported = tryRequire(fp);
                     const spec = exported && exported.spec ? exported.spec : exported;
-                    let id;
+                    let id: string;
                     if (spec && spec.id) {
                         if (spec.id.indexOf('.') !== -1) {
                             id = spec.id;
@@ -76,8 +93,8 @@ function loadModules(baseDir) {
                     const handler = spec.handler || exported.handler || exported.function;
                     if (!handler) continue;
                     mod.actions[id] = { spec: { ...spec, id }, handler };
-                } catch (e) {
-                    console.error('failed loading action', fp, e.message);
+                } catch (e: any) {
+                    console.error('failed loading action', fp, e && e.message ? e.message : e);
                 }
             }
         }
@@ -88,12 +105,18 @@ function loadModules(baseDir) {
     return { modules };
 }
 
-function findAction(registry, actionId) {
+/**
+ * Find a registered action by its full id within a registry object returned
+ * by `loadModules`.
+ *
+ * @param registry - registry object (typically { modules })
+ * @param actionId - the action identifier to look up (e.g. "module.action")
+ * @returns the registered action entry or null when not found
+ */
+export function findAction(registry: any, actionId: string): any | null {
     for (const modName of Object.keys(registry.modules || {})) {
         const mod = registry.modules[modName];
         if (mod.actions && mod.actions[actionId]) return mod.actions[actionId];
     }
     return null;
 }
-
-module.exports = { loadModules, findAction };

@@ -5,7 +5,14 @@ import { blockMs, consumerGroup, consumerName, workflowStreamName } from './conf
 let stopRequested = false;
 let quitting = false;
 
-async function quitRedis() {
+/**
+ * Gracefully close the Redis connection. This function is idempotent and
+ * safe to call multiple times; the first call will attempt to quit the
+ * client and log any error encountered.
+ *
+ * @returns Promise<void>
+ */
+async function quitRedis(): Promise<void> {
     if (quitting) {
         return;
     }
@@ -17,7 +24,14 @@ async function quitRedis() {
     }
 }
 
-export async function run() {
+/**
+ * Main runner loop. Connects to Redis, ensures the consumer group exists
+ * and continuously polls the configured stream for new workflow jobs.
+ * The loop respects `stopRequested` which is set by `registerShutdown`.
+ *
+ * @returns Promise<void>
+ */
+export async function run(): Promise<void> {
     await ensureRedis();
     await ensureGroup(workflowStreamName, consumerGroup);
     console.log('[runner] listening on stream', workflowStreamName, 'group', consumerGroup, 'as', consumerName);
@@ -89,7 +103,12 @@ export async function run() {
     await quitRedis();
 }
 
-export function registerShutdown() {
+/**
+ * Register process signal handlers to request a graceful shutdown.
+ * Signals are handled once; subsequent signals are ignored to allow
+ * natural draining of in-flight work.
+ */
+export function registerShutdown(): void {
     const handler = (signal: NodeJS.Signals) => {
         if (stopRequested) {
             return;
