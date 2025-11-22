@@ -46,6 +46,7 @@ services:
       LEGACY_WORKFLOWS_DIR: /app/legacy_workflows
       LEGACY_CREDENTIALS_DIR: /app/legacy_credentials
       USE_RUNNERS: "true"
+      AREA_ENCRYPTION_KEY: ${AREA_ENCRYPTION_KEY}
     ports:
       - "3000:3000"
     volumes:
