@@ -62,7 +62,7 @@ services:
       - redis
     environment:
       RUNNER_SHARED_SECRET: ${RUNNER_SHARED_SECRET}
-      RUNNER_API_URL: http://backend:3000/api
+      RUNNER_API_URL: http://backend:3000
       REDIS_URL: redis://redis:6379
       WORKFLOW_STREAM: workflow_jobs
       WORKFLOW_CONSUMER_GROUP: workflow-runners

@@ -98,8 +98,8 @@ function evalExpression(expr: string, paramNames: string[], paramValues: any[]) 
     // the local variable names expected by templates. Wrapping ensures
     // object literals evaluate correctly and keeps evaluation scope local.
     const wrapped = `
-        (function(params) {
-            const { ${paramNames.join(', ')} } = params;
+        (function(__params) {
+            const { ${paramNames.join(', ')} } = __params;
             return (${expr});
         })(params)
     `;

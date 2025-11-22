@@ -97,4 +97,4 @@ echo "Waiting a few seconds and showing nodes via container kubeconfig"
 sleep 3
 kubectl --kubeconfig="${KUBECONFIG_HOST}" get nodes || true
 
-echo "Bootstrap complete. If pods don't start, check 'docker logs area-runner' and 'kubectl --kubeconfig=${KUBECONFIG_CONTAINER} get pods -A'."
+echo "Bootstrap complete. If pods don't start, check 'docker logs area-runner' and 'kubectl --kubeconfig=${KUBECONFIG_HOST} get pods -A'."

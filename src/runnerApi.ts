@@ -30,14 +30,24 @@ export function computeRunnerToken(nonce: string): string {
  */
 export function getApiBase(job: WorkflowJobPayload): string {
     if (apiBaseOverride) {
-        return apiBaseOverride;
+        try {
+            const u = new URL(apiBaseOverride);
+            const path = u.pathname || '';
+            const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
+            const finalPath = cleanPath.includes('/api') ? cleanPath : `${cleanPath}/api`;
+            return `${u.protocol}//${u.host}${finalPath}`;
+        } catch (e) {
+            return apiBaseOverride;
+        }
     }
     try {
         const url = new URL(job.callbackUrl);
         const pathname = url.pathname || '';
         const runnerIndex = pathname.indexOf('/runner/');
         const basePath = runnerIndex !== -1 ? pathname.substring(0, runnerIndex) : '';
-        return `${url.protocol}//${url.host}${basePath}`;
+        const cleanBase = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+        const finalBase = cleanBase.includes('/api') ? cleanBase : `${cleanBase}/api`;
+        return `${url.protocol}//${url.host}${finalBase}`;
     } catch (err) {
         throw new Error('cannot derive API base from callbackUrl');
     }
