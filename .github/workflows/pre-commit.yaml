@@ -10,7 +10,7 @@ on:
 
 jobs:
   pre-commit:
-    runs-on: [self-hosted, Linux, X64, sandbox]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
