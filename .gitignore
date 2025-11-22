@@ -47,3 +47,8 @@ tiled/
 temp/
 .DS_Store
 !CODEOWNERS
+!Dockerfile
+node_modules/
+dist/
+/workflows
+/credentials

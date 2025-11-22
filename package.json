@@ -1,0 +1,46 @@
+{
+  "name": "area-worker",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/mbarleon-org/Area-Worker#readme",
+  "bugs": {
+    "url": "https://github.com/mbarleon-org/Area-Worker/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbarleon-org/Area-Worker.git"
+  },
+  "license": "MIT",
+  "author": "",
+  "type": "commonjs",
+  "main": "src/index.ts",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "test": "npx ts-node src/index.ts",
+    "start": "node dist/src/index.js",
+    "bootstrap:kind": "bash ./scripts/bootstrap-kind.sh",
+    "cleanup:k8s": "bash ./scripts/cleanup-k8s.sh -y",
+    "build-image": "docker build -t area-worker:dev .",
+    "reload-stack": "npm run build-image && npm run cleanup:k8s && npm run bootstrap:kind"
+  },
+  "dependencies": {
+    "imapflow": "^1.1.1",
+    "ioredis": "^5.8.2",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.10",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.27",
+    "vm2": "^3.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
