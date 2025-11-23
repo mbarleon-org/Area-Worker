@@ -52,3 +52,8 @@ node_modules/
 dist/
 /workflows
 /credentials
+
+/src/api/engine.ts
+/src/modules/runner.ts
+/src/modules/registry.ts
+/src/modules/_module.spec.ts

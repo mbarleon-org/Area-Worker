@@ -1,0 +1,4 @@
+[submodule "external/Backend"]
+	path = external/Backend
+	url = https://github.com/mbarleon-org/Area-Backend.git
+	branch = main

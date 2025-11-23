@@ -19,7 +19,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "npx tsc",
+    "build": "scripts/copy-files.sh && npx tsc",
     "test": "npx ts-node src/index.ts",
     "start": "node dist/src/index.js",
     "bootstrap:kind": "bash ./scripts/bootstrap-kind.sh",
