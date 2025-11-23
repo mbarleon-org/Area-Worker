@@ -1,0 +1,9 @@
+name: Notify super-repo
+on:
+  push:
+    branches: [main]
+
+jobs:
+  call-super:
+    uses: mbarleon-org/Area/.github/workflows/update-submodules.yml@staging
+    secrets: inherit
