@@ -1,104 +1,39 @@
-import { execSync } from 'child_process';
 import { WorkflowJobPayload } from '../types';
+import { buildJobManifest, buildPayload } from './jobManifest';
+import { KubeConfig, BatchV1Api, V1Job } from '@kubernetes/client-node';
 
 /**
  * Get environment defaults used to construct the Job manifest.
- * @returns object with KIND_IMAGE, KIND_NAMESPACE and KUBECTL_CMD
+ * @returns object with K8S_IMAGE, K8S_NAMESPACE and KUBECTL_CMD
  */
 function getEnvDefaults() {
-    const { KIND_IMAGE = 'area-backend:dev', KIND_NAMESPACE = 'default', KUBECTL_CMD = 'kubectl' } = process.env as any;
-    return { KIND_IMAGE, KIND_NAMESPACE, KUBECTL_CMD };
+    const { K8S_IMAGE = 'area-backend:dev', K8S_NAMESPACE = 'default' } = process.env as any;
+    return { K8S_IMAGE, K8S_NAMESPACE };
 }
 
-/**
- * Rewrite a callback url so in-kind clusters can reach the host runner.
- * If the host is localhost-like, replace with `KIND_CALLBACK_HOST` or `host.docker.internal`.
- * @param original - original callback URL string
- * @returns possibly rewritten URL string
- */
-function rewriteCallbackUrl(original: string) {
-    try {
-        const url = new URL(original);
-        const overrideHost = (process.env.KIND_CALLBACK_HOST as string) || 'host.docker.internal';
-        if (['backend', 'localhost', '127.0.0.1'].includes(url.hostname)) {
-            url.hostname = overrideHost;
-        }
-        return url.toString();
-    } catch (e) {
-        return original;
-    }
-}
-
-/**
- * Build the payload placed into the Job container `JOB_JSON` env var.
- * @param job - job payload from the API
- * @param modulesBase - optional modules base url
- * @returns object payload
- */
-function buildPayload(job: WorkflowJobPayload, modulesBase?: string | null) {
-    return {
-        jobId: job.jobId,
-        workflowId: job.workflowId,
-        workflowVersion: job.workflowVersion,
-        input: job.input,
-        callbackUrl: rewriteCallbackUrl(job.callbackUrl),
-        callbackNonce: job.callbackNonce,
-        modulesBase: modulesBase || null
-    };
-}
-
-/**
- * Build a Kubernetes Job manifest object for the ephemeral runner.
- * @param name - job name
- * @param namespace - k8s namespace
- * @param image - container image to run
- * @param payload - job payload object to inject as `JOB_JSON`
- * @param job - original job payload (used to populate envs)
- * @returns manifest object
- */
-function buildJobManifest(name: string, namespace: string, image: string, payload: any, job: WorkflowJobPayload) {
-    return {
-        apiVersion: 'batch/v1',
-        kind: 'Job',
-        metadata: {
-            name,
-            namespace
-        },
-        spec: {
-            template: {
-                metadata: { name },
-                spec: {
-                    restartPolicy: 'Never',
-                    containers: [
-                        {
-                            name: 'runner',
-                            image: image,
-                            command: ['sh', '-c', "[ -f /app/dist/ephemeral/execJob.js ] && exec node /app/dist/ephemeral/execJob.js || exec node -r ts-node/register/transpile-only /app/src/ephemeral/execJob.ts"],
-                            env: [
-                                { name: 'JOB_JSON', value: JSON.stringify(payload) },
-                                { name: 'WORKFLOW_ID', value: String(job.workflowId) },
-                                { name: 'CALLBACK_URL', value: String(job.callbackUrl) },
-                                { name: 'RUNNER_SHARED_SECRET', value: String(process.env.RUNNER_SHARED_SECRET || '') }
-                            ]
-                        }
-                    ]
-                }
-            }
-        }
-    };
-}
 
 /**
  * Apply a Kubernetes manifest via kubectl.
  * @param kubectlCmd - command name or path to kubectl
  * @param manifestObj - manifest object to apply (will be stringified)
  */
-function applyManifest(kubectlCmd: string, manifestObj: any) {
-    const yaml = JSON.stringify(manifestObj);
+async function applyManifest(manifestObj: V1Job): Promise<void> {
+    const kc = new KubeConfig();
     try {
-        execSync(`${kubectlCmd} apply -f -`, { input: yaml, encoding: 'utf8' });
+        kc.loadFromDefault();
+    } catch (e) {
+        try { kc.loadFromCluster(); } catch (e2) { /* ignore */ }
+    }
+    const client = kc.makeApiClient(BatchV1Api);
+    const namespace = manifestObj.metadata && manifestObj.metadata.namespace ? String(manifestObj.metadata.namespace) : 'default';
+    try {
+        try {
+            await (client as any).createNamespacedJob({ namespace, body: manifestObj } as any);
+            return;
+        } catch (e) { }
+        await (client as any).createNamespacedJob(namespace, manifestObj as any);
     } catch (err: any) {
-        console.error('[kindRunner] failed applying manifest', err && err.message);
+        console.error('[kindRunner] failed creating Job via Kubernetes API', err && err.body ? err.body : err && err.message ? err.message : err);
         throw err;
     }
 }
@@ -112,15 +47,16 @@ function applyManifest(kubectlCmd: string, manifestObj: any) {
  * @param _headers - optional headers (not used)
  */
 export async function submitK8sJob(job: WorkflowJobPayload, _wf: any, modulesBase?: string | null, _headers?: Record<string, string>) {
-    const { KIND_IMAGE, KIND_NAMESPACE, KUBECTL_CMD } = getEnvDefaults();
+    const { K8S_IMAGE, K8S_NAMESPACE } = getEnvDefaults();
 
-    const name = `ephemeral-runner-${job.jobId.slice(0, 8)}`;
+    const name = `ephemeral-runner-${String(job.jobId).slice(0, 8)}`;
 
     const payload = buildPayload(job, modulesBase);
 
-    const manifest = buildJobManifest(name, KIND_NAMESPACE, KIND_IMAGE, payload, job);
+    const manifest = buildJobManifest(name, K8S_NAMESPACE, K8S_IMAGE, payload, job) as unknown as V1Job;
 
-    applyManifest(KUBECTL_CMD, manifest);
+    await applyManifest(manifest);
+    return { jobName: name, namespace: K8S_NAMESPACE };
 }
 
 export default { submitK8sJob };

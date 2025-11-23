@@ -42,10 +42,9 @@ export const consumerName: string = process.env.WORKFLOW_CONSUMER_NAME || `runne
  */
 export const fetchFn: typeof fetch | undefined = (globalThis as any).fetch;
 
-export const RUNNER_EPHEMERAL_KIND = process.env.RUNNER_EPHEMERAL_KIND || 'false';
-export const KIND_IMAGE = process.env.KIND_IMAGE || 'area-backend:dev';
-export const KIND_NAMESPACE = process.env.KIND_NAMESPACE || 'default';
-export const KUBECTL_CMD = process.env.KUBECTL_CMD || 'kubectl';
+export const RUNNER_EPHEMERAL_K8S = process.env.RUNNER_EPHEMERAL_K8S || 'false';
+export const K8S_IMAGE = process.env.K8S_IMAGE || 'area-backend:dev';
+export const K8S_NAMESPACE = process.env.K8S_NAMESPACE || 'default';
 
 if (!sharedSecret) {
     throw new Error('env.RUNNER_SHARED_SECRET must be set in order to use workers.');

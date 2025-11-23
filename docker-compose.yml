@@ -67,11 +67,9 @@ services:
       REDIS_URL: redis://redis:6379
       WORKFLOW_STREAM: workflow_jobs
       WORKFLOW_CONSUMER_GROUP: workflow-runners
-      RUNNER_EPHEMERAL_KIND: "true"
-      KIND_IMAGE: area-worker:dev
-      KIND_NAMESPACE: default
-      KUBECTL_CMD: kubectl --kubeconfig=/root/.kube/config
-      KUBECONFIG: /root/.kube/config
+      RUNNER_EPHEMERAL_K8S: "true"
+      K8S_IMAGE: area-worker:dev
+      K8S_NAMESPACE: default
     volumes:
       - ~/.kube/config.docker:/root/.kube/config:ro
     networks:
