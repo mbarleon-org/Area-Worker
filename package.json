@@ -19,7 +19,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "npx tsc",
+    "build": "scripts/copy-files.sh && npx tsc",
     "test": "npx ts-node src/index.ts",
     "start": "node dist/src/index.js",
     "bootstrap:kind": "bash ./scripts/bootstrap-kind.sh",
@@ -28,6 +28,7 @@
     "reload-stack": "npm run build-image && npm run cleanup:k8s && npm run bootstrap:kind"
   },
   "dependencies": {
+    "@kubernetes/client-node": "^1.4.0",
     "imapflow": "^1.1.1",
     "ioredis": "^5.8.2",
     "node-cron": "^4.2.1",

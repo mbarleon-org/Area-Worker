@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { redis } from './redis';
-import { RUNNER_EPHEMERAL_KIND } from './config';
+import { RUNNER_EPHEMERAL_K8S } from './config';
 import { executeActions } from './api/engine.js';
 import { loadModules } from './modules/registry.js';
 import { submitK8sJob } from './ephemeral/kindRunner';
@@ -146,7 +146,7 @@ async function downloadModulesIfNeeded(job: WorkflowJobPayload, wf: RunnerWorkfl
  * and return true when submission succeeded (the caller should then return).
  */
 async function maybeSubmitEphemeralJob(entryId: string, job: WorkflowJobPayload, wf: RunnerWorkflowResponse, modulesDir: string | null, headers: Record<string, string>): Promise<boolean> {
-    if (RUNNER_EPHEMERAL_KIND !== 'true') return false;
+    if (RUNNER_EPHEMERAL_K8S !== 'true') return false;
     try {
         console.log('[runner] submitting ephemeral k8s job for', job.jobId);
         await submitK8sJob(job, wf, modulesDir, headers);
