@@ -79,20 +79,33 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.AREA_PUSH_TOKEN }}
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.AREA_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.AREA_DOCKERHUB_TOKEN }}
+
       - name: Compute image tags
         id: compute_tags
         env:
-          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/area-worker
+          GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/area-worker
+          DH_IMAGE: ${{ secrets.AREA_DOCKERHUB_USERNAME }}/area-worker
           REF_NAME: ${{ steps.create_tag.outputs.TAG }}
         run: |
-          echo "TAGS<<EOF" >> "$GITHUB_OUTPUT"
-          if [[ "${REF_NAME}" == *"-"* ]]; then
-            echo "${IMAGE_NAME}:$(echo "$REF_NAME" | cut -d'-' -f 2)-latest" >> "$GITHUB_OUTPUT"
-          else
-            echo "${IMAGE_NAME}:latest" >> "$GITHUB_OUTPUT"
-          fi
-          echo "${IMAGE_NAME}:${REF_NAME}" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          {
+            echo "TAGS<<EOF"
+            if [[ "${REF_NAME}" == *"-"* ]]; then
+              base_tag="$(echo "$REF_NAME" | cut -d'-' -f 2)-latest"
+              echo "${GHCR_IMAGE}:${base_tag}"
+              echo "${DH_IMAGE}:${base_tag}"
+            else
+              echo "${GHCR_IMAGE}:latest"
+              echo "${DH_IMAGE}:latest"
+            fi
+            echo "${GHCR_IMAGE}:${REF_NAME}"
+            echo "${DH_IMAGE}:${REF_NAME}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
