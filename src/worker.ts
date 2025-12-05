@@ -2,13 +2,36 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { redis } from './redis';
 import { RUNNER_EPHEMERAL_K8S } from './config';
-import { executeActions } from './api/engine.js';
-import { loadModules } from './modules/registry.js';
 import { submitK8sJob } from './ephemeral/kindRunner';
 import { downloadModules } from './modules/download.js';
 import { consumerGroup, workflowStreamName } from './config';
 import { fetchCredentials, fetchWorkflow, sendCallback, computeRunnerToken, getApiBase } from './runnerApi';
 import { RunnerCallbackPayload, WorkflowJobPayload, RunnerWorkflowResponse, RunnerCredentialsResponse } from './types';
+
+let executeActions: ((...args: any[]) => any) | null = null;
+let loadModules: ((...args: any[]) => any) | null = null;
+
+function getExecuteActions() {
+    if (!executeActions) {
+        try {
+            executeActions = require('./api/engine.js').executeActions;
+        } catch {
+            throw new Error('engine.js not available yet');
+        }
+    }
+    return executeActions;
+}
+
+function getLoadModules() {
+    if (!loadModules) {
+        try {
+            loadModules = require('./modules/registry.js').loadModules;
+        } catch {
+            throw new Error('registry.js not available yet');
+        }
+    }
+    return loadModules;
+}
 
 export function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -165,13 +188,13 @@ async function maybeSubmitEphemeralJob(entryId: string, job: WorkflowJobPayload,
  * actions result to be posted back to the API.
  */
 async function runWorkflowActions(job: WorkflowJobPayload, wf: RunnerWorkflowResponse, credsResp: RunnerCredentialsResponse, modulesDir: string | null): Promise<any> {
-    const registry = loadModules(modulesDir || path.resolve(process.cwd(), 'src', 'modules'));
+    const registry = getLoadModules()(modulesDir || path.resolve(process.cwd(), 'src', 'modules'));
     const actionsList = (wf.workflow && Array.isArray(wf.workflow.actions)) ? wf.workflow.actions : [];
     const triggerOutputs = (job.input && (job.input as any).triggerOutputs) || { body: {}, params: {}, query: {} };
     const initialNodeOutputs = (job.input && (job.input as any).initialNodeOutputs) || {};
     const credentialMap = (credsResp && (credsResp as any).credentials) || {};
 
-    return await executeActions(actionsList, null, triggerOutputs, initialNodeOutputs, wf.workflow, registry, {
+    return await getExecuteActions()(actionsList, null, triggerOutputs, initialNodeOutputs, wf.workflow, registry, {
         getCredentialById: (credentialId: string) => {
             const cred = credentialMap[credentialId];
             if (!cred) {
@@ -197,7 +220,6 @@ async function cleanupModulesDir(modulesDir: string | null): Promise<void> {
     try {
         await fs.promises.rm(modulesDir, { recursive: true, force: true });
     } catch (e) {
-        // non-fatal cleanup error; log for diagnostics
         console.warn('[runner] failed cleaning modules dir', modulesDir, e);
     }
 }

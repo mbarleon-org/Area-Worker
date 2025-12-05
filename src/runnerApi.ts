@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { createHmac } from 'crypto';
 import { apiBaseOverride, fetchFn, sharedSecret } from './config';
 import { RunnerCallbackPayload, RunnerCredentialsResponse, RunnerWorkflowResponse, WorkflowJobPayload } from './types';
@@ -127,4 +129,77 @@ export async function fetchCredentials(job: WorkflowJobPayload, credentialIds: s
         throw new Error(`credentials fetch failed ${res.status}: ${text}`);
     }
     return res.json() as Promise<RunnerCredentialsResponse>;
+}
+
+export async function downloadBase(job: WorkflowJobPayload): Promise<void> {
+    const requiredFiles = ["modules/_module.spec.js", "modules/registry.js", "modules/runner.js", "api/engine.js"];
+
+    const base = getApiBase(job);
+    const baseWithSlash = base.endsWith('/') ? base : `${base}/`;
+    const url = new URL(`runner/base/`, baseWithSlash);
+    const headers = {
+        'x-runner-token': computeRunnerToken(job.callbackNonce),
+        'x-runner-job': job.jobId
+    };
+    for (const filePath of requiredFiles) {
+        const destPath = path.join(__dirname, filePath);
+        const buf = await downloadFileWithFallback(url, filePath, headers);
+        await fs.promises.mkdir(path.dirname(destPath), { recursive: true });
+        await fs.promises.writeFile(destPath, buf);
+    }
+}
+
+async function downloadFileWithFallback(baseUrl: URL, filePath: string, headers: Record<string, string>): Promise<Buffer> {
+    const fileUrl = new URL(filePath, baseUrl);
+    const res = await fetchFn!(fileUrl.toString(), { method: 'GET', headers });
+    if (res.ok) {
+        return Buffer.from(await res.arrayBuffer());
+    }
+    const text = await res.text().catch(() => '');
+    if (!filePath.endsWith('.js')) {
+        throw new Error(`file download failed ${res.status}: ${text}`);
+    }
+    return await downloadTsFallback(baseUrl, filePath, headers, res.status, res.statusText, text);
+}
+
+async function downloadTsFallback(baseUrl: URL, originalPath: string, headers: Record<string, string>, jsStatus: number, jsStatusText: string, jsBody: string): Promise<Buffer> {
+    const tsPath = `${originalPath.slice(0, -3)}.ts`;
+    const tsUrl = new URL(tsPath, baseUrl);
+    const tsRes = await fetchFn!(tsUrl.toString(), { method: 'GET', headers });
+    if (!tsRes.ok) {
+        const tsBody = await tsRes.text().catch(() => '');
+        throw new Error(`file download failed ${jsStatus} ${jsStatusText}: ${jsBody}; ts fallback failed ${tsRes.status} ${tsRes.statusText}: ${tsBody}`);
+    }
+    const tsSource = await tsRes.text();
+    const jsCode = transpileTsSource(tsSource, tsPath);
+    return Buffer.from(jsCode, 'utf8');
+}
+
+type TypeScriptModule = typeof import('typescript');
+let tsModuleCache: TypeScriptModule | null = null;
+
+function getTypeScriptModule(): TypeScriptModule {
+    if (!tsModuleCache) {
+        try {
+            tsModuleCache = require('typescript') as TypeScriptModule;
+        } catch (err) {
+            throw new Error('failed to require typescript package for TS fallback transpilation');
+        }
+    }
+    return tsModuleCache;
+}
+
+function transpileTsSource(source: string, fileName: string): string {
+    const ts = getTypeScriptModule();
+    const result = ts.transpileModule(source, {
+        compilerOptions: {
+            module: ts.ModuleKind.CommonJS,
+            target: ts.ScriptTarget.ES2021
+        },
+        fileName
+    });
+    if (!result.outputText) {
+        throw new Error(`transpile failed for ${fileName}`);
+    }
+    return result.outputText;
 }

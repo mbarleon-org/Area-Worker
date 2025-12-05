@@ -1,10 +1,33 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { WorkflowJobPayload } from '../types.js';
-import { executeActions } from '../api/engine.js';
-import { loadModules } from '../modules/registry.js';
 import { downloadModules } from '../modules/download.js';
-import { fetchCredentials, fetchWorkflow, sendCallback, computeRunnerToken, getApiBase } from '../runnerApi.js';
+import { fetchCredentials, fetchWorkflow, sendCallback, computeRunnerToken, getApiBase, downloadBase } from '../runnerApi.js';
+
+let executeActions: ((...args: any[]) => any) | null = null;
+let loadModules: ((...args: any[]) => any) | null = null;
+
+function getExecuteActions() {
+    if (!executeActions) {
+        try {
+            executeActions = require('../api/engine.js').executeActions;
+        } catch {
+            throw new Error('engine.js not available yet');
+        }
+    }
+    return executeActions;
+}
+
+function getLoadModules() {
+    if (!loadModules) {
+        try {
+            loadModules = require('../modules/registry.js').loadModules;
+        } catch {
+            throw new Error('registry.js not available yet');
+        }
+    }
+    return loadModules;
+}
 
 /**
  * Parse the JOB_JSON environment variable and return the job payload.
@@ -23,7 +46,6 @@ function parseJobEnv(): WorkflowJobPayload {
  * @param statusPayload - partial status payload passed to sendCallback
  */
 async function reportStatus(job: WorkflowJobPayload, statusPartial: Record<string, any>) {
-    // Ensure required callback fields are present; merge provided fields.
     const payload = {
         jobId: job.jobId,
         workflowId: job.workflowId,
@@ -82,7 +104,7 @@ async function maybeDownloadModules(wf: any, job: WorkflowJobPayload, headers: R
  * @returns registry object
  */
 function buildRegistry(modulesDir: string | null) {
-    return loadModules(modulesDir || path.resolve(process.cwd(), 'src', 'modules'));
+    return getLoadModules()(modulesDir || path.resolve(process.cwd(), 'src', 'modules'));
 }
 
 /**
@@ -122,7 +144,7 @@ async function executeJob(job: WorkflowJobPayload, wf: any, credsResp: any, modu
 
     const registry = buildRegistry(modulesDir);
 
-    const result = await executeActions(actionsList, null, triggerOutputs, initialNodeOutputs, wf.workflow, registry, {
+    const result = await getExecuteActions()(actionsList, null, triggerOutputs, initialNodeOutputs, wf.workflow, registry, {
         getCredentialById: (credentialId: string) => {
             const cred = credentialMap[credentialId];
             if (!cred) {
@@ -146,6 +168,8 @@ async function run() {
         const job = parseJobEnv();
 
         await reportStatus(job, { jobId: job.jobId, workflowId: job.workflowId, status: 'running' });
+
+        await downloadBase(job);
 
         const { wf, credsResp } = await fetchWorkflowAndCredentials(job);
 
