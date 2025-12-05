@@ -47,6 +47,8 @@ services:
       LEGACY_CREDENTIALS_DIR: /app/legacy_credentials
       USE_RUNNERS: "true"
       AREA_ENCRYPTION_KEY: ${AREA_ENCRYPTION_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      CHECK_USER_EMAIL: "false"
     ports:
       - "3000:3000"
     volumes:

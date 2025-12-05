@@ -1,3 +1,4 @@
+import { downloadBase } from './runnerApi';
 import { ensureGroup, ensureRedis, redis } from './redis';
 import { parseJob, processMessage, sleep } from './worker';
 import { blockMs, consumerGroup, consumerName, workflowStreamName } from './config';
@@ -37,6 +38,7 @@ export async function run(): Promise<void> {
     console.log('[runner] listening on stream', workflowStreamName, 'group', consumerGroup, 'as', consumerName);
 
     let catchup = true;
+    let isBaseDownloaded = false;
 
     while (!stopRequested) {
         try {
@@ -73,6 +75,10 @@ export async function run(): Promise<void> {
                     if (!parsed) {
                         await redis.xack(workflowStreamName, consumerGroup, entryId);
                         continue;
+                    }
+                    if (!isBaseDownloaded) {
+                        await downloadBase(parsed.job);
+                        isBaseDownloaded = true;
                     }
                     await processMessage(entryId, parsed.job);
                 }

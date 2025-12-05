@@ -3,6 +3,7 @@ import * as path from 'path';
 import { redis } from './redis';
 import { RUNNER_EPHEMERAL_K8S } from './config';
 import { executeActions } from './api/engine.js';
+// @ts-ignore
 import { loadModules } from './modules/registry.js';
 import { submitK8sJob } from './ephemeral/kindRunner';
 import { downloadModules } from './modules/download.js';
@@ -197,7 +198,6 @@ async function cleanupModulesDir(modulesDir: string | null): Promise<void> {
     try {
         await fs.promises.rm(modulesDir, { recursive: true, force: true });
     } catch (e) {
-        // non-fatal cleanup error; log for diagnostics
         console.warn('[runner] failed cleaning modules dir', modulesDir, e);
     }
 }
